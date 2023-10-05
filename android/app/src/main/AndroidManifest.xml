@@ -15,6 +15,14 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <!-- android:icon="@mipmap/launcher_icon" -->
     <application
         android:name="${applicationName}"

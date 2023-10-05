@@ -68,6 +68,7 @@ class _MainScreenState extends State<MainScreen> {
 
     if ((Platform.isAndroid && version != androidVersion) ||
         (Platform.isIOS && version != iosVersion)) {
+
       if (!mounted) return;
 
       showDialog(
@@ -88,7 +89,6 @@ class _MainScreenState extends State<MainScreen> {
                       throw "Can not launch $playStoreUri";
                     }
                   } else if (Platform.isIOS) {
-                    // 해당 다이렉션은 정식 출시 기준으로 제대로 작동함
                     final Uri appStoreUri = Uri.parse(
                         "https://apps.apple.com/app/치매북스/id1557576686");
                     if (await canLaunchUrl(appStoreUri)) {
@@ -114,6 +114,17 @@ class _MainScreenState extends State<MainScreen> {
           );
         },
       );
+    }
+  }
+
+  /// 카카오톡 채널 Direction (Link to built-in web browser)
+  void launchURL(String url) async {
+    final channelUrl = Uri.parse("https://pf.kakao.com/_TWxjxbxb");
+
+    if (await canLaunchUrl(channelUrl)) {
+      await launchUrl(channelUrl);
+    } else {
+      print("Can not launch $channelUrl");
     }
   }
 
@@ -229,6 +240,23 @@ class _MainScreenState extends State<MainScreen> {
                       setState(() {
                         isLoading = false;
                       });
+                    },
+                    navigationDelegate: (NavigationRequest request) async {
+
+                      if (request.url.startsWith("tel:")) {
+                        if (await canLaunchUrl(Uri.parse(request.url))) {
+                          await launchUrl(Uri.parse(request.url));
+                        }
+                        return NavigationDecision.prevent;
+                      }
+
+                      if (request.url
+                          .startsWith("https://pf.kakao.com/_TWxjxbxb")) {
+                        launchURL(request.url);
+                        return NavigationDecision.prevent;
+                      }
+
+                      return NavigationDecision.navigate;
                     },
                     zoomEnabled: true,
                     gestureNavigationEnabled: true,
