@@ -26,6 +26,9 @@ class _MainScreenState extends State<MainScreen> {
   /// 인덱스 페이지 초기화
   bool isInMainPage = true;
 
+  /// Page Loading Indicator 초기화
+  bool isLoading = true;
+
   /// 웹뷰 컨트롤러 초기화
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
@@ -59,8 +62,8 @@ class _MainScreenState extends State<MainScreen> {
 
     print("User Device App Version: $version");
 
-    /// Version Management (Hard Coded)
-    const String androidVersion = "1.1.0";
+    /// Version Management (Manually)
+    const String androidVersion = "1.0.6";
     const String iosVersion = "2.1.0";
 
     if ((Platform.isAndroid && version != androidVersion) ||
@@ -122,7 +125,7 @@ class _MainScreenState extends State<MainScreen> {
 
     final currentUrl = await _viewController?.currentUrl();
 
-    if (currentUrl == url) {
+    if (currentUrl == "$url/main.php") {
       if (!mounted) return false;
       return showDialog<bool>(
         context: context,
@@ -172,61 +175,78 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          return WillPopScope(
-            onWillPop: _onWillPop,
-            child: SafeArea(
-              child: WebView(
-                initialUrl: url,
-                javascriptMode: JavascriptMode.unrestricted,
-                onWebResourceError: (error) {
-                  print("Error Code: ${error.errorCode}");
-                  print("Error Description: ${error.description}");
-                },
-                onWebViewCreated: (WebViewController webviewController) async {
-                  _controller.complete(webviewController);
-                  _viewController = webviewController;
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              return WillPopScope(
+                onWillPop: _onWillPop,
+                child: SafeArea(
+                  child: WebView(
+                    initialUrl: url,
+                    javascriptMode: JavascriptMode.unrestricted,
+                    onWebResourceError: (error) {
+                      print("Error Code: ${error.errorCode}");
+                      print("Error Description: ${error.description}");
+                    },
+                    onWebViewCreated: (WebViewController webviewController) async {
+                      _controller.complete(webviewController);
+                      _viewController = webviewController;
 
-                  webviewController.currentUrl().then((url) async {
-                    if (url == "$url/main.php") {
-                      setState(() {
-                        isInMainPage = true;
+                      webviewController.currentUrl().then((url) async {
+                        if (url == "$url/main.php") {
+                          setState(() {
+                            isInMainPage = true;
+                          });
+                        } else {
+                          setState(() {
+                            isInMainPage = false;
+                          });
+                        }
+
+                        /// Cookie Management
+                        await cookieManager.getCookies(null);
+
+                        await cookieManager.setCookies([
+                          Cookie(cookieName, cookieValue)
+                            ..domain = domain
+                            ..expires = DateTime.now().add(
+                              const Duration(
+                                days: 90,
+                              ),
+                            )
+                            ..httpOnly = false
+                        ]);
                       });
-                    } else {
+                    },
+                    onPageStarted: (String url) async {
+                      print("현재 페이지: $url");
                       setState(() {
-                        isInMainPage = false;
+                        isLoading = true;
                       });
-                    }
-
-                    /// Cookie Management
-                    await cookieManager.getCookies(null);
-
-                    await cookieManager.setCookies([
-                      Cookie(cookieName, cookieValue)
-                        ..domain = domain
-                        ..expires = DateTime.now().add(
-                          const Duration(
-                            days: 90,
-                          ),
-                        )
-                        ..httpOnly = false
-                    ]);
-                  });
-                },
-                onPageStarted: (String url) async {
-                  print("현재 페이지: $url");
-                },
-                zoomEnabled: true,
-                gestureNavigationEnabled: true,
-                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
-                  Factory<EagerGestureRecognizer>(
-                          () => EagerGestureRecognizer())
-                ].toSet(),
-              ),
-            ),
-          );
-        },
+                    },
+                    onPageFinished: (String url) async {
+                      setState(() {
+                        isLoading = false;
+                      });
+                    },
+                    zoomEnabled: true,
+                    gestureNavigationEnabled: true,
+                    gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
+                      Factory<EagerGestureRecognizer>(
+                              () => EagerGestureRecognizer())
+                    ].toSet(),
+                  ),
+                ),
+              );
+            },
+          ),
+          isLoading
+              ? const Center(
+                  child: CircularProgressIndicator.adaptive(),
+                )
+              : Container(),
+        ],
       ),
     );
   }

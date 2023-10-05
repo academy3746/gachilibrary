@@ -28,7 +28,7 @@ class BooksApp extends StatelessWidget {
       title: '치매북스',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFF5A6A8),
+          seedColor: const Color(0xFFF24162),
           primary: const Color(0xFFF5D2D2),
         ),
         useMaterial3: false,
