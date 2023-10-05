@@ -118,7 +118,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   /// 카카오톡 채널 Direction (Link to built-in web browser)
-  void launchURL(String url) async {
+  void launchChannel(String url) async {
     final channelUrl = Uri.parse("https://pf.kakao.com/_TWxjxbxb");
 
     if (await canLaunchUrl(channelUrl)) {
@@ -242,7 +242,6 @@ class _MainScreenState extends State<MainScreen> {
                       });
                     },
                     navigationDelegate: (NavigationRequest request) async {
-
                       if (request.url.startsWith("tel:")) {
                         if (await canLaunchUrl(Uri.parse(request.url))) {
                           await launchUrl(Uri.parse(request.url));
@@ -252,7 +251,7 @@ class _MainScreenState extends State<MainScreen> {
 
                       if (request.url
                           .startsWith("https://pf.kakao.com/_TWxjxbxb")) {
-                        launchURL(request.url);
+                        launchChannel(request.url);
                         return NavigationDecision.prevent;
                       }
 
