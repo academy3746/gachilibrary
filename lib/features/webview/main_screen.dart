@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webview_pro/webview_flutter.dart';
+import 'package:gachilibrary/features/webview/widgets/confirm_button.dart';
 import 'package:package_info/package_info.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,7 +34,7 @@ class _MainScreenState extends State<MainScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
 
-  WebViewController? _viewController;
+  late WebViewController? _viewController;
 
   /// Import Cookie Manager
   final WebviewCookieManager cookieManager = WebviewCookieManager();
@@ -55,7 +56,7 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  /// Store Direction
+  /// Store Direction (AOS / IOS)
   void _getAppVersion(BuildContext context) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String version = packageInfo.version;
@@ -118,13 +119,18 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   /// 카카오톡 채널 Direction (Link to built-in web browser)
-  void launchChannel(String url) async {
+  void _launchChannel(String url) async {
     final channelUrl = Uri.parse("https://pf.kakao.com/_TWxjxbxb");
 
     if (await canLaunchUrl(channelUrl)) {
       await launchUrl(channelUrl);
     } else {
-      print("Can not launch $channelUrl");
+      ConfirmButton(
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        text: "유효하지 않은 카카오톡 채널입니다.",
+      );
     }
   }
 
@@ -251,7 +257,7 @@ class _MainScreenState extends State<MainScreen> {
 
                       if (request.url
                           .startsWith("https://pf.kakao.com/_TWxjxbxb")) {
-                        launchChannel(request.url);
+                        _launchChannel(request.url);
                         return NavigationDecision.prevent;
                       }
 
@@ -259,10 +265,12 @@ class _MainScreenState extends State<MainScreen> {
                     },
                     zoomEnabled: true,
                     gestureNavigationEnabled: true,
-                    gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>[
-                      Factory<EagerGestureRecognizer>(
-                              () => EagerGestureRecognizer())
-                    ].toSet(),
+                    gestureRecognizers: Set()
+                      ..add(
+                        Factory<EagerGestureRecognizer>(
+                          () => EagerGestureRecognizer(),
+                        ),
+                      ),
                   ),
                 ),
               );
