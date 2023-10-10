@@ -10,9 +10,8 @@ import 'package:get/get.dart';
 import 'package:package_info/package_info.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
-
 import '../firebase/fcm_controller.dart';
+import '../webview/widgets/cookie_manager.dart';
 
 class MainScreen extends StatefulWidget {
   static String routeName = "/main";
@@ -39,11 +38,8 @@ class _MainScreenState extends State<MainScreen> {
 
   late WebViewController? _viewController;
 
-  /// Import Cookie Manager
-  final WebviewCookieManager cookieManager = WebviewCookieManager();
-  final String cookieValue = "cookieValue";
-  final String domain = "celest.cafe24.com";
-  final String cookieName = "cookieName";
+  /// Import Built-in Cookie Manager
+  final AppCookieManager cookieManager = AppCookieManager();
 
   /// Push Setting 초기화
   final MsgController _msgController = Get.put(MsgController());
@@ -233,19 +229,12 @@ class _MainScreenState extends State<MainScreen> {
                           });
                         }
 
-                        /// Cookie Management
-                        await cookieManager.getCookies(null);
-
-                        await cookieManager.setCookies([
-                          Cookie(cookieName, cookieValue)
-                            ..domain = domain
-                            ..expires = DateTime.now().add(
-                              const Duration(
-                                days: 90,
-                              ),
-                            )
-                            ..httpOnly = false
-                        ]);
+                        ///Cookie Management
+                        await cookieManager.setCookies(
+                          cookieManager.cookieValue,
+                          cookieManager.domain,
+                          cookieManager.cookieName,
+                        );
                       });
                     },
                     onPageStarted: (String url) async {
