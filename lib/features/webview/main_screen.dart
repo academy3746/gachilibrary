@@ -6,10 +6,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webview_pro/webview_flutter.dart';
 import 'package:gachilibrary/features/webview/widgets/confirm_button.dart';
+import 'package:get/get.dart';
 import 'package:package_info/package_info.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+
+import '../firebase/fcm_controller.dart';
 
 class MainScreen extends StatefulWidget {
   static String routeName = "/main";
@@ -41,6 +44,14 @@ class _MainScreenState extends State<MainScreen> {
   final String cookieValue = "cookieValue";
   final String domain = "celest.cafe24.com";
   final String cookieName = "cookieName";
+
+  /// Push Setting 초기화
+  final MsgController _msgController = Get.put(MsgController());
+
+  /// Get User Token
+  Future<String?> _getPushToken() async {
+    return await _msgController.getToken();
+  }
 
   /// 저장매체 접근 권한 요청
   void _requestStoragePermission() async {
@@ -183,6 +194,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
 
     if (Platform.isAndroid) WebView.platform = AndroidWebView();
+    _getPushToken();
     _requestStoragePermission();
     _getAppVersion(context);
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "734285722921",
+    "project_id": "gachilibrary-fff51",
+    "storage_bucket": "gachilibrary-fff51.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734285722921:android:0e5883af2398fc6b78f338",
+        "android_client_info": {
+          "package_name": "kr.beaversoft.gachilibrary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDXPLkNGPe5cbbXgH6d8FU0VigBQjUf2I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
