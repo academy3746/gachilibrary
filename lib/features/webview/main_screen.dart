@@ -5,13 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webview_pro/webview_flutter.dart';
-import 'package:gachilibrary/features/webview/widgets/confirm_button.dart';
+import 'package:gachilibrary/features/webview/widgets/app_version_checker.dart';
+import 'package:gachilibrary/features/webview/widgets/back_action_handler.dart';
+import 'package:gachilibrary/features/webview/widgets/kakao_channel.dart';
+import 'package:gachilibrary/features/webview/widgets/permission_manager.dart';
 import 'package:get/get.dart';
-import 'package:package_info/package_info.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../firebase/fcm_controller.dart';
-import '../webview/widgets/cookie_manager.dart';
+import '../webview/widgets/app_cookie_manager.dart';
 
 class MainScreen extends StatefulWidget {
   static String routeName = "/main";
@@ -36,10 +37,10 @@ class _MainScreenState extends State<MainScreen> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
 
-  late WebViewController? _viewController;
+  WebViewController? _viewController;
 
-  /// Import Built-in Cookie Manager
-  final AppCookieManager cookieManager = AppCookieManager();
+  /// Import Cookie Manager
+  AppCookieManager? cookieManager;
 
   /// Push Setting 초기화
   final MsgController _msgController = Get.put(MsgController());
@@ -49,150 +50,34 @@ class _MainScreenState extends State<MainScreen> {
     return await _msgController.getToken();
   }
 
-  /// 저장매체 접근 권한 요청
-  void _requestStoragePermission() async {
-    PermissionStatus status = await Permission.manageExternalStorage.status;
-    if (!status.isGranted) {
-      PermissionStatus result =
-          await Permission.manageExternalStorage.request();
-      if (!result.isGranted) {
-        print('Permission denied by user');
-      } else {
-        print('Permission has submitted.');
-      }
-    }
-  }
+  /// Import Kakao Channel Direction
+  late final KakaoChannel _kakaoChannel;
 
-  /// Store Direction (AOS / IOS)
-  void _getAppVersion(BuildContext context) async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    String version = packageInfo.version;
-
-    print("User Device App Version: $version");
-
-    /// Version Management (Manually)
-    const String androidVersion = "1.0.6";
-    const String iosVersion = "2.1.0";
-
-    if ((Platform.isAndroid && version != androidVersion) ||
-        (Platform.isIOS && version != iosVersion)) {
-
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("앱 업데이트 정보"),
-            content: const Text("앱 버전이 최신이 아닙니다.\n업데이트를 위해 마켓으로 이동하시겠습니까?"),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  if (Platform.isAndroid) {
-                    final Uri playStoreUri = Uri.parse(
-                        "market://details?id=kr.beaversoft.gachilibrary");
-                    if (await canLaunchUrl(playStoreUri)) {
-                      await launchUrl(playStoreUri);
-                    } else {
-                      throw "Can not launch $playStoreUri";
-                    }
-                  } else if (Platform.isIOS) {
-                    final Uri appStoreUri = Uri.parse(
-                        "https://apps.apple.com/app/치매북스/id1557576686");
-                    if (await canLaunchUrl(appStoreUri)) {
-                      await launchUrl(appStoreUri);
-                    } else {
-                      throw "Can not launch $appStoreUri";
-                    }
-                  }
-
-                  if (!mounted) return;
-
-                  Navigator.of(context).pop();
-                },
-                child: const Text("확인"),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text("취소"),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
-
-  /// 카카오톡 채널 Direction (Link to built-in web browser)
-  void _launchChannel(String url) async {
-    final channelUrl = Uri.parse("https://pf.kakao.com/_TWxjxbxb");
-
-    if (await canLaunchUrl(channelUrl)) {
-      await launchUrl(channelUrl);
-    } else {
-      ConfirmButton(
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        text: "유효하지 않은 카카오톡 채널입니다.",
-      );
-    }
-  }
-
-  /// 뒤로 가기 Action
-  Future<bool> _onWillPop() async {
-    if (_viewController == null) {
-      return false;
-    }
-
-    final currentUrl = await _viewController?.currentUrl();
-
-    if (currentUrl == "$url/main.php") {
-      if (!mounted) return false;
-      return showDialog<bool>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("앱을 종료하시겠습니까?"),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(true);
-                  print("앱이 포그라운드에서 종료되었습니다.");
-                },
-                child: const Text("확인"),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(false);
-                  print("앱이 종료되지 않았습니다.");
-                },
-                child: const Text("취소"),
-              ),
-            ],
-          );
-        },
-      ).then((value) => value ?? false);
-    } else if (await _viewController!.canGoBack() && _viewController != null) {
-      _viewController!.goBack();
-      print("이전 페이지로 이동하였습니다.");
-
-      isInMainPage = false;
-      return false;
-    }
-    return false;
-  }
+  /// Import Back Action Handler
+  late final BackActionHandler _backActionHandler;
 
   @override
   void initState() {
     super.initState();
 
     if (Platform.isAndroid) WebView.platform = AndroidWebView();
+
     _getPushToken();
-    _requestStoragePermission();
-    _getAppVersion(context);
+
+    /// 저장매체 접근 권한 요청
+    StoragePermissionManager permissionManager =
+        StoragePermissionManager(context);
+    permissionManager.requestStoragePermission();
+
+    /// App Version Check
+    AppVersionCheck appVersionCheck = AppVersionCheck(context);
+    appVersionCheck.getAppVersion();
+
+    /// Initialize Cookies
+    cookieManager = AppCookieManager(url);
+
+    /// Initialize Kakao Channel URL
+    _kakaoChannel = KakaoChannel(context);
   }
 
   @override
@@ -205,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
           LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               return WillPopScope(
-                onWillPop: _onWillPop,
+                onWillPop: () => _backActionHandler.onWillPop(),
                 child: SafeArea(
                   child: WebView(
                     initialUrl: url,
@@ -214,9 +99,12 @@ class _MainScreenState extends State<MainScreen> {
                       print("Error Code: ${error.errorCode}");
                       print("Error Description: ${error.description}");
                     },
-                    onWebViewCreated: (WebViewController webviewController) async {
+                    onWebViewCreated:
+                        (WebViewController webviewController) async {
                       _controller.complete(webviewController);
                       _viewController = webviewController;
+                      _backActionHandler =
+                          BackActionHandler(context, _viewController, url);
 
                       webviewController.currentUrl().then((url) async {
                         if (url == "$url/main.php") {
@@ -229,11 +117,12 @@ class _MainScreenState extends State<MainScreen> {
                           });
                         }
 
-                        ///Cookie Management
-                        await cookieManager.setCookies(
-                          cookieManager.cookieValue,
-                          cookieManager.domain,
-                          cookieManager.cookieName,
+                        /// Cookie Management
+                        await cookieManager?.setCookies(
+                          cookieManager!.cookieValue,
+                          cookieManager!.domain,
+                          cookieManager!.cookieName,
+                          cookieManager!.url,
                         );
                       });
                     },
@@ -258,7 +147,7 @@ class _MainScreenState extends State<MainScreen> {
 
                       if (request.url
                           .startsWith("https://pf.kakao.com/_TWxjxbxb")) {
-                        _launchChannel(request.url);
+                        _kakaoChannel.launchChannel(url);
                         return NavigationDecision.prevent;
                       }
 
