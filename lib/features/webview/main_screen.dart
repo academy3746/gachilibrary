@@ -40,7 +40,7 @@ class _MainScreenState extends State<MainScreen> {
   WebViewController? _viewController;
 
   /// Import Cookie Manager
-  AppCookieManager? cookieManager;
+  AppCookieManager? _cookieManager;
 
   /// Push Setting 초기화
   final MsgController _msgController = Get.put(MsgController());
@@ -74,7 +74,7 @@ class _MainScreenState extends State<MainScreen> {
     appVersionCheck.getAppVersion();
 
     /// Initialize Cookies
-    cookieManager = AppCookieManager(url);
+    _cookieManager = AppCookieManager(url, url);
 
     /// Initialize Kakao Channel URL
     _kakaoChannel = KakaoChannel(context);
@@ -118,11 +118,11 @@ class _MainScreenState extends State<MainScreen> {
                         }
 
                         /// Cookie Management
-                        await cookieManager?.setCookies(
-                          cookieManager!.cookieValue,
-                          cookieManager!.domain,
-                          cookieManager!.cookieName,
-                          cookieManager!.url,
+                        await _cookieManager?.setCookies(
+                          _cookieManager!.cookieValue,
+                          _cookieManager!.domain,
+                          _cookieManager!.cookieName,
+                          _cookieManager!.url,
                         );
                       });
                     },
