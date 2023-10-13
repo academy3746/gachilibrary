@@ -120,7 +120,7 @@ class _MainScreenState extends State<MainScreen> {
                           });
                         }
 
-                        /// Cookie Management
+                        /// Save Cookies in User Device
                         await _cookieManager?.setCookies(
                           _cookieManager!.cookieValue,
                           _cookieManager!.domain,
@@ -128,9 +128,9 @@ class _MainScreenState extends State<MainScreen> {
                           _cookieManager!.url,
                         );
 
-                        /// Check Cookie Statement
+                        /// Check Maintained Cookies Statement
                         if (hasCookies) {
-                          _viewController?.loadUrl("$url/main.php");
+                          _viewController?.loadUrl("${url}main.php");
                         } else {
                           _viewController?.loadUrl("$url");
                         }
