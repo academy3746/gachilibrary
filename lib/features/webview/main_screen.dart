@@ -24,37 +24,37 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  /// URL 초기화
+  /// Initialize Main Page URL
   final String url = "https://celest.cafe24.com";
 
-  /// 인덱스 페이지 초기화
+  /// Initialize Main Page Statement
   bool isInMainPage = true;
 
-  /// Page Loading Indicator 초기화
+  /// Initialize Page Loading Indicator
   bool isLoading = true;
 
-  /// 웹뷰 컨트롤러 초기화
+  /// Initialize WebView Controller
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
 
   WebViewController? _viewController;
 
-  /// Import Cookie Manager
-  AppCookieManager? _cookieManager;
-
-  /// Push Setting 초기화
+  /// Initialize Push Setting
   final MsgController _msgController = Get.put(MsgController());
 
-  /// Get User Token
-  Future<String?> _getPushToken() async {
-    return await _msgController.getToken();
-  }
+  /// Import Cookie Manager
+  AppCookieManager? _cookieManager;
 
   /// Import Kakao Channel Direction
   late final KakaoChannel _kakaoChannel;
 
   /// Import Back Action Handler
   late final BackActionHandler _backActionHandler;
+
+  /// Get User Token from Firebase Server
+  Future<String?> _getPushToken() async {
+    return await _msgController.getToken();
+  }
 
   @override
   void initState() {
@@ -105,7 +105,10 @@ class _MainScreenState extends State<MainScreen> {
                       _viewController = webviewController;
                       _backActionHandler =
                           BackActionHandler(context, _viewController, url);
+                      bool hasCookies =
+                          await _cookieManager?.hasCookies("token") ?? false;
 
+                      /// Exit Application whether or not
                       webviewController.currentUrl().then((url) async {
                         if (url == "$url/main.php") {
                           setState(() {
@@ -124,6 +127,13 @@ class _MainScreenState extends State<MainScreen> {
                           _cookieManager!.cookieName,
                           _cookieManager!.url,
                         );
+
+                        /// Check Cookie Statement
+                        if (hasCookies) {
+                          _viewController?.loadUrl("$url/main.php");
+                        } else {
+                          _viewController?.loadUrl("$url");
+                        }
                       });
                     },
                     onPageStarted: (String url) async {

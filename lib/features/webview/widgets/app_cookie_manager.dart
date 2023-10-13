@@ -11,8 +11,8 @@ class AppCookieManager {
   final String _url;
 
   AppCookieManager(
-    this._url,
     this._domain,
+    this._url,
   );
 
   /// Getter
@@ -24,6 +24,7 @@ class AppCookieManager {
 
   String get url => _url;
 
+  /// Cookie Setting
   Future<void> setCookies(
       String cookieValue, String domain, String cookieName, String url) async {
     await _cookieManager.getCookies(url);
@@ -41,5 +42,13 @@ class AppCookieManager {
 
     var debugCookie = await _cookieManager.getCookies(url);
     print("Load Cookie Info: $debugCookie");
+  }
+
+  /// Check Returned Cookie Name
+  Future<bool> hasCookies(String cookieName) async {
+    final getCookies = await _cookieManager.getCookies(url);
+
+    return getCookies
+        .any((cookie) => cookie.name == cookieName && cookie.value.isNotEmpty);
   }
 }
