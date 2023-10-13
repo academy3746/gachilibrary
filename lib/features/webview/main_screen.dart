@@ -120,7 +120,7 @@ class _MainScreenState extends State<MainScreen> {
                           });
                         }
 
-                        /// Save Cookies in User Device
+                        /// Get Cookies from Web Server
                         await _cookieManager?.setCookies(
                           _cookieManager!.cookieValue,
                           _cookieManager!.domain,
