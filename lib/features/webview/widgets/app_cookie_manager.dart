@@ -44,7 +44,7 @@ class AppCookieManager {
     print("Load Cookie Info: $debugCookie");
   }
 
-  /// Check Returned Cookie Name
+  /// Check Returned Cookie Parameters
   Future<bool> hasCookies(String cookieName) async {
     final getCookies = await _cookieManager.getCookies(url);
 

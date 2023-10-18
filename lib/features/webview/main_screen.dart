@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, prefer_collection_literals
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -10,6 +11,7 @@ import 'package:gachilibrary/features/webview/widgets/back_action_handler.dart';
 import 'package:gachilibrary/features/webview/widgets/kakao_channel.dart';
 import 'package:gachilibrary/features/webview/widgets/permission_manager.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../firebase/fcm_controller.dart';
 import '../webview/widgets/app_cookie_manager.dart';
@@ -56,11 +58,44 @@ class _MainScreenState extends State<MainScreen> {
     return await _msgController.getToken();
   }
 
+  /// App ~ Web Server Communication
+  JavascriptChannel _flutterWebviewProJavascriptChannel(BuildContext context) {
+    return JavascriptChannel(
+      name: 'flutter_webview_pro',
+      onMessageReceived: (JavascriptMessage message) async {
+        Map<String, dynamic> jsonData = jsonDecode(message.message);
+
+        if (jsonData['handler'] == 'webviewJavaScriptHandler') {
+
+          if (jsonData['action'] == 'setUserId') {
+            String userId = jsonData['data']['userId'];
+
+            GetStorage().write('userId', userId);
+
+            print("Communication Succeed: ${message.message}");
+
+            String? fcmToken = await _getPushToken();
+
+            if (fcmToken != null) {
+              _viewController?.runJavascript("""
+                tokenUpdate("$fcmToken")
+              """);
+            } else {
+              print("Failed Message: ${message.message}");
+            }
+          }
+        }
+
+        setState(() {});
+      },
+    );
+  }
+
   @override
   void initState() {
     super.initState();
 
-    if (Platform.isAndroid) WebView.platform = AndroidWebView();
+    if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
 
     _getPushToken();
 
@@ -95,6 +130,9 @@ class _MainScreenState extends State<MainScreen> {
                   child: WebView(
                     initialUrl: url,
                     javascriptMode: JavascriptMode.unrestricted,
+                    javascriptChannels: <JavascriptChannel>[
+                      _flutterWebviewProJavascriptChannel(context),
+                    ].toSet(),
                     onWebResourceError: (error) {
                       print("Error Code: ${error.errorCode}");
                       print("Error Description: ${error.description}");
@@ -106,10 +144,11 @@ class _MainScreenState extends State<MainScreen> {
                       _backActionHandler =
                           BackActionHandler(context, _viewController, url);
                       bool hasCookies =
-                          await _cookieManager?.hasCookies("token") ?? false;
+                          await _cookieManager?.hasCookies("PHPSESSID") ??
+                              false;
 
-                      /// Exit Application whether or not
                       webviewController.currentUrl().then((url) async {
+                        /// Exit Application whether or not
                         if (url == "$url/main.php") {
                           setState(() {
                             isInMainPage = true;
@@ -121,14 +160,16 @@ class _MainScreenState extends State<MainScreen> {
                         }
 
                         /// Get Cookies from Web Server
-                        await _cookieManager?.setCookies(
+                        await _cookieManager!.setCookies(
                           _cookieManager!.cookieValue,
                           _cookieManager!.domain,
                           _cookieManager!.cookieName,
                           _cookieManager!.url,
                         );
 
-                        /// Check Maintained Cookies Statement
+                        /// 1. GET Cookie Parameter through PHPSESSID
+                        /// 2. Check Returned Cookie Parameters
+                        /// 3. Direct to Main URL
                         if (hasCookies) {
                           _viewController?.loadUrl("${url}main.php");
                         } else {
