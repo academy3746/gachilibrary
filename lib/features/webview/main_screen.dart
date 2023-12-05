@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, prefer_collection_literals
+// ignore_for_file: avoid_print, prefer_collection_literals, deprecated_member_use
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webview_pro/webview_flutter.dart';
 import 'package:gachilibrary/features/webview/widgets/app_version_checker.dart';
 import 'package:gachilibrary/features/webview/widgets/back_action_handler.dart';
-import 'package:gachilibrary/features/webview/widgets/kakao_channel.dart';
 import 'package:gachilibrary/features/webview/widgets/permission_manager.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -46,9 +45,6 @@ class _MainScreenState extends State<MainScreen> {
 
   /// Import Cookie Manager
   AppCookieManager? _cookieManager;
-
-  /// Import Kakao Channel Direction
-  late final KakaoChannel _kakaoChannel;
 
   /// Import Back Action Handler
   late final BackActionHandler _backActionHandler;
@@ -110,9 +106,6 @@ class _MainScreenState extends State<MainScreen> {
 
     /// Initialize Cookies
     _cookieManager = AppCookieManager(url, url);
-
-    /// Initialize Kakao Channel URL
-    _kakaoChannel = KakaoChannel(context);
   }
 
   @override
@@ -193,12 +186,18 @@ class _MainScreenState extends State<MainScreen> {
                         if (await canLaunchUrl(Uri.parse(request.url))) {
                           await launchUrl(Uri.parse(request.url));
                         }
+
                         return NavigationDecision.prevent;
                       }
 
-                      if (request.url
-                          .startsWith("https://pf.kakao.com/_TWxjxbxb")) {
-                        _kakaoChannel.launchChannel(url);
+                      if (!request.url.contains(url)) {
+                        if (await canLaunchUrl(Uri.parse(request.url))) {
+                          await launchUrl(
+                            Uri.parse(request.url),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+
                         return NavigationDecision.prevent;
                       }
 
