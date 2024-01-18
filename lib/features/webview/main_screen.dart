@@ -49,11 +49,6 @@ class _MainScreenState extends State<MainScreen> {
   /// Import Back Action Handler
   late final BackActionHandler _backActionHandler;
 
-  /// Get User Token from Firebase Server
-  Future<String?> _getPushToken() async {
-    return await _msgController.getToken();
-  }
-
   /// App ~ Web Server Communication
   JavascriptChannel _flutterWebviewProJavascriptChannel(BuildContext context) {
     return JavascriptChannel(
@@ -70,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
 
             print("Communication Succeed: ${message.message}");
 
-            String? fcmToken = await _getPushToken();
+            String? fcmToken = await _msgController.getToken();
 
             if (fcmToken != null) {
               _viewController?.runJavascript("""
