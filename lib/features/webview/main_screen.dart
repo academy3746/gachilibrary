@@ -6,14 +6,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webview_pro/webview_flutter.dart';
+import 'package:gachilibrary/features/firebase/fcm_controller.dart';
+import 'package:gachilibrary/features/webview/widgets/app_cookie_manager.dart';
 import 'package:gachilibrary/features/webview/widgets/app_version_checker.dart';
 import 'package:gachilibrary/features/webview/widgets/back_action_handler.dart';
 import 'package:gachilibrary/features/webview/widgets/permission_manager.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../firebase/fcm_controller.dart';
-import '../webview/widgets/app_cookie_manager.dart';
 
 class MainScreen extends StatefulWidget {
   static String routeName = "/main";
@@ -92,8 +92,6 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
 
     if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
-
-    _getPushToken();
 
     /// 저장매체 접근 권한 요청
     StoragePermissionManager permissionManager =
